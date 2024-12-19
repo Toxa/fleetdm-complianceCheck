@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка устройства</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            width: 90%; /* Динамическая ширина */
+            max-width: 700px; /* Увеличенная максимальная ширина */
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .container img {
+            width: 80px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .device-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .device-id {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .issue-box {
+            background-color: #f8f9fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .issue-description {
+            position: relative; /* Чтобы подсказка была позиционирована относительно родителя */
+            cursor: pointer;
+        }
+
+
+        .tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.8rem;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .issue-description:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .issue-box .issue-description div {
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+        }
+
+        .issue-box .issue-description img {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+
+        .issue-box .issue-description h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .issue-box .fix-tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+            position: absolute;
+            top: -40px; /* Положение подсказки относительно кнопки */
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: pre-wrap;
+            font-size: 0.8rem;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .fix-button.clicked + .fix-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .issue-box .fix-button {
+            background-color: #edf3ff;
+            color: #3483eb;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 20px;
+            cursor: pointer;
+        }
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 6px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #4a31d4;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .loading-message {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .recheck-button, .snooze-button {
+            background-color: #d7e8db;
+            color: #4c9e66;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            width: 100%; /* Кнопки занимают всю ширину */
+            text-align: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .recheck-button.disabled {
+            background-color: #d0d0d0;
+            color: #999999;
+            cursor: not-allowed;
+        }
+
+        .snooze-button {
+            background-color: #4a31d4;
+            color: white;
+        }
+
+        .footer {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #888;
+            text-decoration: none;
+        }
+        .not-found {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .download-links {
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .download-links a {
+            display: block;
+            margin: 5px 0;
+            color: #3483eb;
+            text-decoration: none;
+        }
+
+        .client-ip {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 20px;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            .device-name {
+                font-size: 1rem;
+            }
+
+            .issue-box .fix-button,
+            .recheck-button,
+            .snooze-button {
+                font-size: 0.8rem;
+                padding: 8px;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="accessResult">{% if access_granted > 0 %}
+                Устройство заблокировано
+            {% elif device_offline %}
+                Устройство находится в автономном режиме
+            {% else %}
+                Доступ разрешен
+            {% endif %}</h1>
+
+
+        {% if not device_found %}
+
+            <div class="not-found">
+                {% if not device_offline %}
+                    Устройство не найдено.
+                {% else %}
+                    <img src="{{ url_for('static', filename=platform+'.png') }}" alt="{{ platform }} image">
+                    <div class="device-name">{{ host_name }}</div>
+                    Данные об устройстве найдены в базе, однако агент osquery давно не был в сети.
+                {% endif %}
+                <br>Для корректной работы необходим установленный и запущенный агент osquery.
+                Скачайте и установите его, убедитесь что он запущен.
+            </div>
+            <div class="download-links">
+                <a href="https://fleetdm.example.com/fleet-osquery.msi">Скачать osquery для Windows (MSI)</a>
+                <a href="https://fleetdm.example.com/fleet-osquery.deb">Скачать osquery для Linux (DEB)</a>
+                <a href="https://fleetdm.example.com/fleet-osquery.rpm">Скачать osquery для Linux (RPM)</a>
+                <a href="https://fleetdm.example.com/fleet-osquery.pkg">Скачать osquery для MacOS (PKG)</a>
+            </div>
+            <div class="client-ip">
+                Ваш IP-адрес: {{ client_ip }}. Если проблема сохраняется, обратитесь в техподдержку.
+            </div>
+        {% else %}
+            <img src="{{ url_for('static', filename=platform+'.png') }}" alt="{{ platform }} image">
+            <div class="device-name">{{ host_name }}</div>
+            <div class="device-id">{{ host_uuid }}</div>
+
+            <div id="issues-container">
+            {% for fail_policy in failed_policies %}
+                <div class="issue-box">
+                    <div class="issue-description" >
+                        <h3>{{ fail_policy.name }}</h3>
+                        <div class="tooltip">{{ fail_policy.description }}</div>
+                    </div>
+                    <div class="fix-button">Как исправить?</div>
+                    <div class="fix-tooltip">{{ fail_policy.resolution }}</div>
+                </div>
+
+            {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="recheck-button" id="recheck-button">
+
+            Повторная проверка устройства
+        </div>
+
+        <!-- Loading Container -->
+        <div class="loading-container" id="loading-container">
+            <div class="spinner"></div>
+            <p class="loading-message">Мы выполняем проверку вашего устройства на соответствие политикам. Проверка может занимать до 15 секунд. Дождитесь окончания проверки.</p>
+        </div>
+        <div class="footer">
+            Требуется помощь? <a href="#">Свяжитесь с отделом ИБ</a>
+        </div>
+    </div>
+
+
+    <script>
+
+        // Добавляем событие клика для всех кнопок .fix-button
+        document.querySelectorAll('.fix-button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Добавляем класс clicked для показа всплывающей подсказки
+                this.classList.add('clicked');
+
+                // Через 2 секунды убираем класс для скрытия подсказки
+                setTimeout(() => {
+                    this.classList.remove('clicked');
+                }, 7000);
+            });
+        });
+    </script>
+
+    <script>
+        function get_updates()
+        {
+            if ('{{ device_found }}' === 'False'){
+//                location.reload(true);
+                return;
+            }
+
+            const RecheckButton = document.getElementById('recheck-button');
+            RecheckButton.classList.add('disabled');
+            // Скрыть результат проверки и показать индикатор загрузки
+            const IssuesContainer = document.getElementById('issues-container');
+            const LoadingContainer = document.getElementById('loading-container');
+            const AccessResultHeader = document.getElementById('accessResult');
+            IssuesContainer.style.display = 'none';
+            LoadingContainer.style.display = 'flex';
+            fetch('/update-policies')
+                .then(response => {
+                    if(response.status === 200) {
+                    return response.json();
+                }
+                    else{
+                        location.reload(true);
+                        return Promise.reject(response.statusText)
+                    }
+
+                })
+                .then(data => {
+
+                    // Скрыть индикатор загрузки и показать результат
+                    AccessResultHeader.innerHTML = data.access_granted >0  ? 'Устройство заблокировано' : 'Доступ разрешен';
+                    IssuesContainer.innerHTML = '';
+                    LoadingContainer.style.display = 'none';
+                    IssuesContainer.style.display = 'block';
+                    data.failed_policies.forEach(policy => {
+                        // Блок с проблемами
+                        const block = document.createElement('div');
+                        block.classList.add('issue-box');
+                        // Описание проблемы
+                        const IssueDescription = document.createElement('div');
+                        IssueDescription.classList.add('issue-description');
+
+                        const policyName = document.createElement('h3');
+                        policyName.textContent = policy.name;
+
+                        const tooltip = document.createElement('div');
+                        tooltip.classList.add('tooltip');
+                        tooltip.textContent = policy.description;
+
+                        IssueDescription.appendChild(policyName);
+                        IssueDescription.appendChild(tooltip);
+                        // Кнопки исправления
+                        const fixButton = document.createElement('div');
+                        fixButton.classList.add('fix-button');
+                        fixButton.textContent = 'Как исправить?';
+
+                        const fixTooltip = document.createElement('div');
+                        fixTooltip.classList.add('fix-tooltip');
+                        fixTooltip.textContent = policy.resolution;
+
+                        // Добавляем событие клика по кнопке исправления
+                        fixButton.addEventListener('click', function ()  {
+                            this.classList.add('clicked');
+                            setTimeout(() => {
+                                this.classList.remove('clicked')
+                            }, 10000);
+                        });
+
+
+                        // Склеиваем
+                        block.appendChild(IssueDescription);
+                        block.appendChild(fixButton);
+                        block.appendChild(fixTooltip);
+
+                        IssuesContainer.appendChild(block);
+                        RecheckButton.classList.remove('disabled');
+                    });
+
+                    console.log(data);
+                }).catch(error => {
+                    console.log(error);
+                });
+
+        }
+
+        // Вызываем функцию по окончании загрузки страницы
+        document.addEventListener('DOMContentLoaded', get_updates);
+        // Асинхронное обновление статусов политик /update-policies
+        document.getElementById('recheck-button').addEventListener('click', get_updates);
+
+
+    </script>
+
+
+</body>
+</html>

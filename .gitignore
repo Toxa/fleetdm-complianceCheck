@@ -1,0 +1,5 @@
+**/.idea
+**./.venv
+**/templates/*.j2
+*token*
+__pycache__
